@@ -224,39 +224,13 @@ var result;
         return assetReq;
     };
 
-    var validateRequiredFeilds = function (type, assetReq) {
+    var assignProviderFeild = function (type, assetReq) {
         var rxtManager = rxtModule.core.rxtManager(user.tenantId);
-        var name = rxtManager.getNameAttribute(type);
-        if(name && name.length >1){
-            validateRequiredFeild(name, assetReq);
-        }
-        var version = rxtManager.getVersionAttribute(type);
-        if(version && version.length >1){
-            validateRequiredFeild(version, assetReq);
-        }
         var provider = rxtManager.getProviderAttribute(type);
         if(provider && provider.length >1 && assetReq.hasOwnProperty('attributes')){
             assetReq.attributes[provider] = user.username;
         }
-//        var fields = rxtManager.listRxtFields(type);
-//        for (var key in fields) {
-//                if (fields.hasOwnProperty(key)) {
-//                    var field =  fields[key];
-//                    if (field && field.name && field.required && field.name.fullName) {
-//                        validateRequiredFeild(field.name.fullName, assetReq);
-//                    }
-//                }
-//        }
     };
-
-    var validateRequiredFeild = function (feildName, assetReq) {
-        var resources = request.getAllFiles();
-        if ((!assetReq.hasOwnProperty(feildName)) && (!assetReq.attributes.hasOwnProperty(feildName)) && !(resources && resources.hasOwnProperty(feildName))){
-            var msg = feildName + ' is not provided. Please provide a value for ' + feildName + ' since it is a required field';
-            throw exceptionModule.buildExceptionObject(msg, constants.STATUS_CODES.BAD_REQUEST);
-        }
-    };
-
 
     /**
      * api to create a new asset
@@ -294,7 +268,7 @@ var result;
             if (log.isDebugEnabled()) {
                 log.debug('Creating Asset : ' + stringify(asset));
             }
-            validateRequiredFeilds(options.type, asset);
+            assignProviderFeild(options.type, asset);
             am.create(asset);
             createdAsset = am.get(asset.id);
             am.postCreate(createdAsset, ctx);

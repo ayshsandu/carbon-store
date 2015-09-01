@@ -167,6 +167,36 @@ var asset = {};
         var versions = am.getAssetGroup(asset);
         return (versions.length < 1) ? true : false;
     };
+
+    var validateRequiredFeilds = function (type, assetReq, rxtManager) {
+        var name = rxtManager.getNameAttribute(type);
+        log.info(name);
+        if(name && name.length >1){
+            validateRequiredFeild(name, assetReq);
+        }
+        var version = rxtManager.getVersionAttribute(type);
+        if(version && version.length >1){
+            validateRequiredFeild(version, assetReq);
+        }
+        var fields = rxtManager.listRxtFields(type);
+        for (var key in fields) {
+            if (fields.hasOwnProperty(key)) {
+                var field =  fields[key];
+                if (field && field.name && field.required && field.name.fullName) {
+                    validateRequiredFeild(field.name.fullName, assetReq);
+                }
+            }
+        }
+    };
+
+    var validateRequiredFeild = function (feildName, assetReq) {
+        var resources = request.getAllFiles();
+        if ((!assetReq.hasOwnProperty(feildName)) && (!assetReq.attributes.hasOwnProperty(feildName)) && !(resources && resources.hasOwnProperty(feildName))){
+            var msg = feildName + ' is not provided. Please provide a value for ' + feildName + ' since it is a required field';
+            throw exceptionModule.buildExceptionObject(msg, constants.STATUS_CODES.BAD_REQUEST);
+        }
+    };
+
     /**
      * Creates a new asset instance by calling the underlying artifact manager on
      * a JSON object representing the asset.If the asset is added successfully the
@@ -185,6 +215,7 @@ var asset = {};
      * @lends AssetManager.prototype
      */
     AssetManager.prototype.create = function(options) {
+        validateRequiredFeilds(this.type, options, this.rxtManager);
         var isDefault = false;
         if ((options.hasOwnProperty(constants.Q_PROP_DEFAULT)) && (options[constants.Q_PROP_DEFAULT] === true)) {
             delete options[constants.Q_PROP_DEFAULT];

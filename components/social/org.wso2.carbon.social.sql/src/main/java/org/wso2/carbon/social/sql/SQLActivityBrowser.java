@@ -38,7 +38,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -53,6 +55,11 @@ public class SQLActivityBrowser implements ActivityBrowser {
 			+ Constants.RATING_TOTAL + "," + Constants.RATING_COUNT + " FROM "
 			+ Constants.SOCIAL_RATING_CACHE_TABLE_NAME + " WHERE "
 			+ Constants.CONTEXT_ID_COLUMN + "= ?";
+
+    public static final String SELECT_CACHES_SQL = "SELECT "
+			+ Constants.RATING_TOTAL + "," + Constants.RATING_COUNT + "," + Constants.CONTEXT_ID_COLUMN + " FROM "
+			+ Constants.SOCIAL_RATING_CACHE_TABLE_NAME + " WHERE "
+			+ Constants.CONTEXT_ID_COLUMN + " IN (?)";
 
 	public static final String TOP_ASSETS_SELECT_SQL = "SELECT "
 			+ Constants.RATING_TOTAL + "," + Constants.RATING_COUNT + ","
@@ -135,6 +142,73 @@ public class SQLActivityBrowser implements ActivityBrowser {
 		}
 
 		return null;
+	}
+
+	@Override
+	/**
+	 * Retrieve average rating of a target
+	 *
+	 * @param targetId
+	 * @return average rating JsonObject
+	 * @throws SocialActivityException
+	 */
+	public Map<String , JsonObject> getRatings(String[] targetIds) throws SocialActivityException {
+        Map<String , JsonObject> jObjs = new HashMap<String, JsonObject>();
+		Connection connection = null;
+		PreparedStatement statement;
+		ResultSet resultSet;
+		String errorMsg = "Unable to retrieve rating for target: ";
+
+        StringBuilder builder = new StringBuilder();
+
+        for( int i = 0 ; i < targetIds.length ; i++ ) {
+            builder.append("?,");
+        }
+
+        String stmt = SELECT_CACHES_SQL.replace("?", builder.deleteCharAt( builder.length() -1 ).toString());
+
+		try {
+			if (log.isDebugEnabled()) {
+				log.debug("Executing: " + stmt);
+			}
+			connection = DSConnection.getConnection();
+			statement = connection.prepareStatement(stmt);
+
+            int index = 1;
+            for( String s : targetIds ) {
+                statement.setString(index++, s ); // or whatever it applies
+            }
+			//statement.setString(1, ids);
+			resultSet = statement.executeQuery();
+
+			while (resultSet.next()) {
+				int total, count;
+                String id;
+				total = resultSet.getInt(Constants.RATING_TOTAL);
+				count = resultSet.getInt(Constants.RATING_COUNT);
+				id = resultSet.getString(Constants.CONTEXT_ID_COLUMN);
+				if (total != 0) {
+					JsonObject object = new JsonObject();
+					object.addProperty(Constants.RATING, (double) total / count);
+					object.addProperty(Constants.COUNT, count);
+					object.addProperty(Constants.ID_COLUMN, id);
+                    jObjs.put(id, object);
+				}
+			}
+            resultSet.close();
+            return jObjs;
+
+		} catch (SQLException e) {
+			String message = errorMsg + targetIds.length + e.getMessage();
+			log.error(message, e);
+			throw new SocialActivityException(message, e);
+		} catch (DataSourceException e) {
+			String message = errorMsg + targetIds.length + e.getMessage();
+			log.error(message, e);
+			throw new SocialActivityException(message, e);
+		} finally {
+			DSConnection.closeConnection(connection);
+		}
 	}
 
 	@Override

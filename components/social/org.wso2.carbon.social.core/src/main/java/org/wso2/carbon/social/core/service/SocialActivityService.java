@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.social.core.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
@@ -27,6 +28,7 @@ import org.wso2.carbon.social.core.ActivityPublisher;
 import org.wso2.carbon.social.core.SocialActivityException;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class SocialActivityService {
 
@@ -79,6 +81,16 @@ public abstract class SocialActivityService {
 	 */
 	public JsonObject getRating(String targetId) throws SocialActivityException {
 		return getActivityBrowser().getRating(targetId);
+	}
+    /**
+	 * Allows asset id to be passed into the service and retrieve average rating
+	 * for the given asset
+	 *
+	 * @param targetIds
+	 * @return averageRating
+	 */
+	public Map<String , JsonObject> getRatings(String[] targetIds) throws SocialActivityException {
+		return getActivityBrowser().getRatings(targetIds);
 	}
 
 	/**

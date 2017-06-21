@@ -21,9 +21,12 @@ package org.wso2.carbon.social.core;
 import com.google.gson.JsonObject;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ActivityBrowser {
 	JsonObject getRating(String targetId) throws SocialActivityException;
+
+    Map<String, JsonObject> getRatings(String[] targetIds) throws SocialActivityException;
 
 	JsonObject getSocialObject(String targetId, String order, int offset,
 			int limit) throws SocialActivityException;
